@@ -16,12 +16,6 @@
 #include "PacketOperations.h"
 #include "./helpers/utils.h"
 
-// Link libraries
-#pragma comment(lib, "wsock32.lib")
-#pragma comment(lib, "ws2_32.lib")
-#pragma comment(lib, "wpcap.lib")
-#pragma comment(lib, "Packet.lib")
-
 
 // Global variable, checks if server is running.
 std::atomic<bool> server_running(true);
@@ -103,9 +97,6 @@ void config_server() {
 
     // Initialize client information vector.
     std::vector<ClientInformation> clients;
-
-    // Prepare for packet capture.
-    uint8_t buffer[1024]; 
 
     // Initialise thread to listen for console commands.
     std::thread console_thread(console_listener);

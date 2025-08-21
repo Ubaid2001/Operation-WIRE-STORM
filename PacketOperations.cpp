@@ -135,7 +135,6 @@ void PacketOperations::packet_handler(u_char* user, const struct pcap_pkthdr* he
     //Computing the payload
     int ip_total_len = ntohs(ip->tot_len);
     int payload_len = ip_total_len - (ihl + tcphdrlen);
-    const unsigned char* payload = p + ihl + tcphdrlen; 
 
     // Print packet information
     char src[16], dst[16];

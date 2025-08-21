@@ -6,7 +6,7 @@
 // Libraries
 #include <winsock.h>
 
-// Class definition
+// Class 
 class PacketOperations {
 public:
     PacketOperations() = default;
