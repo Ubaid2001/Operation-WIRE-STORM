@@ -67,3 +67,7 @@ main.exe
 ``` 
 - In order to run the program on localhost, select the loopback device to capture the packets.
     - If you want to run with the computers ip address then use the correct device e.g. PCIe for ethernet or WiFi 6. 
+- Type 'quit' twice to exit the server, and then the program. 
+```powershell
+quit
+```

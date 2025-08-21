@@ -25,6 +25,7 @@ void console_listener() {
     std::string input;
     while (server_running) {
         std::getline(std::cin, input);
+        std::transform(input.begin(), input.end(), input.begin(), ::tolower);
         if (input == "quit") {
             server_running = false;  // signal server to stop
             break;
@@ -193,7 +194,7 @@ void config_server() {
 // Main function to start the server and packet capture.
 int main() {
 
-    std::cout << "Operation Wire Storm Reloaded started. Enter 'quit' to exit program.\n";
+    std::cout << "Operation Wire Storm Reloaded started. Type 'quit' to exit program.\n";
 
     PacketOperations packetOps;
 
