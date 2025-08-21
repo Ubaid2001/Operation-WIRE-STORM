@@ -1,10 +1,15 @@
+// helpers/protocol_headers.h
+// This header file defines structures for various network protocol headers.
 #ifndef PROTOCOL_HEADERS_H
 #define PROTOCOL_HEADERS_H
 
+// Libraries
 #include <winsock2.h>
 
+// Ensure structures are packed to avoid padding issues
 #pragma pack(push, 1)
 
+// Define structures for Ethernet, IP, and TCP headers
 struct eth_header {
     u_char dst[6];
     u_char src[6];

@@ -1,21 +1,30 @@
+// PacketOperations.cpp
+// Operation Wire Storm Reloaded - Packet Capture Operations
+
+// Libraries
 #include <pcap.h>
 #include <iostream>
 #include <winsock.h>
 #include <vector>
 #include <cstdint>
 
+// Custom includes
 #include "PacketOperations.h"
 #include "./helpers/helper.h"
 #include "./helpers/protocol_headers.h"
 
 
 // Background thread for capture
+// This function will run in a separate thread to capture packets.
+// It will use the pcap library to capture packets on a specified network interface.
 void PacketOperations::start_capture() {
+    // Find all available devices
     pcap_if_t* alldevs;
     pcap_if_t* d;
     char errbuf[PCAP_ERRBUF_SIZE];
     int inum, i = 0;
 
+    // Get the list of all devices
     if (pcap_findalldevs(&alldevs, errbuf) == -1) {
         fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
         return;
@@ -28,11 +37,13 @@ void PacketOperations::start_capture() {
         else printf(" (No description available)\n");
     }
 
+    // If no devices found, exit
     if (i == 0) {
         printf("No interfaces found!\n");
         return;
     }
 
+    // Ask user to select a device | if running locolhost, select loopback
     printf("Enter interface number (1-%d): ", i);
     scanf_s("%d", &inum);
     if (inum < 1 || inum > i) {
@@ -44,12 +55,14 @@ void PacketOperations::start_capture() {
     for (d = alldevs, i=0; i < inum-1; d = d->next, i++);
     pcap_t* adhandle = pcap_open(d->name, 65536, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf);
 
+    // Check if adapter opened successfully
     if (!adhandle) {
         fprintf(stderr, "Unable to open adapter %s\n", d->name);
         pcap_freealldevs(alldevs);
         return;
     }
 
+    // Print adapter information
     CaptureCtx ctx{};
     ctx.linktype = pcap_datalink(adhandle);
     switch (ctx.linktype) {
@@ -63,10 +76,12 @@ void PacketOperations::start_capture() {
             ctx.l2len = 0;
     }
 
-    // Filter for TCP port 33333
+    // Filter packets captured for TCP port 33333
     struct bpf_program fcode;
     char packet_filter[] = "ip and tcp port 33333";
     bpf_u_int32 netmask = 0xffffff;
+
+    // Compile and set the filter
     if (pcap_compile(adhandle, &fcode, packet_filter, 1, netmask) < 0 ||
         pcap_setfilter(adhandle, &fcode) < 0) {
         fprintf(stderr, "Error setting filter\n");
@@ -82,8 +97,18 @@ void PacketOperations::start_capture() {
     pcap_close(adhandle);
 }
 
-
+/* 
+ * Packet handler function
+ * This function is called by pcap_loop for each captured packet.
+ * It processes the packet and prints relevant information.
+ * Parameters:
+ * - user: User data passed to the handler (CaptureCtx pointer).
+ * - header: Header information of the captured packet.
+ * - pkt: Pointer to the captured packet data.
+ * Returns: None
+*/
 void PacketOperations::packet_handler(u_char* user, const struct pcap_pkthdr* header, const u_char* pkt) {
+    // Cast user data to CaptureCtx pointer
     auto* ctx = reinterpret_cast<CaptureCtx*>(user);
     if (header->caplen < ctx->l2len + 20) return; // not enough for IPv4 header
 
@@ -95,12 +120,15 @@ void PacketOperations::packet_handler(u_char* user, const struct pcap_pkthdr* he
         if (ntohs(eth->ether_type) != 0x0800) return; // not IPv4
     }
 
+    // ip_header parsing
     const ip_header* ip = reinterpret_cast<const ip_header*>(p);
     int ihl = (ip->ver_ihl & 0x0F) * 4;
     if (ihl < 20 || header->caplen < ctx->l2len + ihl + 20) return;
 
+    // Check if the protocol is TCP
     if (ip->protocol != IPPROTO_TCP) return;
 
+    // tcp_header parsing
     const tcp_header* tcp = reinterpret_cast<const tcp_header*>(p + ihl);
     int tcphdrlen = ((tcp->data_offset >> 4) & 0x0F) * 4;; 
 
@@ -109,6 +137,7 @@ void PacketOperations::packet_handler(u_char* user, const struct pcap_pkthdr* he
     int payload_len = ip_total_len - (ihl + tcphdrlen);
     const unsigned char* payload = p + ihl + tcphdrlen; 
 
+    // Print packet information
     char src[16], dst[16];
     _snprintf_s(src, _TRUNCATE, "%u.%u.%u.%u", ip->saddr[0], ip->saddr[1], ip->saddr[2], ip->saddr[3]);
     _snprintf_s(dst, _TRUNCATE, "%u.%u.%u.%u", ip->daddr[0], ip->daddr[1], ip->daddr[2], ip->daddr[3]);

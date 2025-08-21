@@ -1,6 +1,9 @@
+// helpers/config.h
+// This header file contains configuration constants for the server.
 #ifndef CONGIG_H
 #define CONGIG_H
 
+// Libraries
 #include <string>
 
 constexpr const char* IP_ADDRESS = "127.0.0.1";
